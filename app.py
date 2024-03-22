@@ -1,12 +1,12 @@
 import os
 from PIL import Image
-import yfinance as yf
 import pandas as pd
 from pathlib import Path
 import streamlit as st
 from utils import utils
+from datetime import datetime
 from dotenv import load_dotenv; load_dotenv()
-from lyzr import DataConnector, DataAnalyzr
+from lyzr import DataAnalyzr, DataConnector
 
 
 
@@ -40,6 +40,9 @@ def style_app():
 
 # Expene Tracker Application
 
+# replace this with your openai api key or create an environment variable for storing the key.
+API_KEY = os.getenv('OPENAI_API_KEY')
+
 # create directory if it doesn't exist
 data = "data"
 plot = 'plot'
@@ -47,9 +50,22 @@ os.makedirs(data, exist_ok=True)
 os.makedirs(plot, exist_ok=True)
 
 
+def data_uploader():
+    st.subheader("Upload CSV file for analysis")
+    # Upload csv file
+    uploaded_file = st.file_uploader("Choose csv file", type=["csv"])
+    if uploaded_file is not None:
+        utils.save_uploaded_file(uploaded_file)
+    else:
+        utils.remove_existing_files(data)
+        utils.remove_existing_files(plot)
 
 
 
+def expense_tracker(filepath):
+    dataframe = DataConnector().fetch_dataframe_from_csv(file_path=Path(filepath))
+    analyzr = DataAnalyzr(df=dataframe, api_key=API_KEY)
+    return analyzr
 
 
 
@@ -65,22 +81,30 @@ def file_checker():
 
 if __name__ == "__main__":
     style_app()
-    select_compnay()
+    st.markdown("#### Make sure your data in this format")
+    utils.data_format()
+    data_uploader()
     file = file_checker()
     if len(file)>0:
-        analyzr = market_analyzr()
-        description, analysis = generating_insights(analyzr)
-        if description is not None:
-            st.subheader("Description the Company data")
-            st.write(description)
-            plot_files = os.listdir("./plot")
-            st.subheader("Technical Indicators about the company stock")
-            for plot_file in plot_files:
-                st.image(f"./plot/{plot_file}")
-            st.subheader("Recommended Analysis")
-            st.write(analysis)
-        else:
-            st.error('Error: occurs while generating description')
+        month_names = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
+        selected_month = st.selectbox('Select a Month', month_names)
+        current_year = datetime.now().year
+        selected_year = st.selectbox("Select a Year:", range(current_year - 30, current_year + 30), index=10)
+        if st.button('Submit'):
+            path = utils.get_files_in_directory(data)
+            analyzr_agent = expense_tracker(filepath=path[0])
+            if analyzr_agent is not None:
+                insights = utils.generating_insights(analyzr=analyzr_agent, month=selected_month, year=selected_year)
+                if insights is not None:
+                    plot_files = os.listdir("./plot")
+                    st.subheader(f"Expence Insights for {selected_month} {selected_year}")
+                    for plot_file in plot_files:
+                        st.image(f"./plot/{plot_file}") 
+                    st.subheader("Recommended Analysis")
+                    utils.show_results(result=insights)
+
+    else:
+        st.warning('Please Upload a csv file')
 
     with st.expander("ℹ️ - About this App"):
         st.markdown("""

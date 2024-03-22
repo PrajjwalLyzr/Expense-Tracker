@@ -39,27 +39,58 @@ def save_uploaded_file(uploaded_file):
     st.success("File uploaded successfully")
 
 
-def generating_insights(analyzr):
-    description = analyzr.dataset_description()
-    analysis = analyzr.analysis_recommendation()
-    prompts = ["Create a candlestick chart to visualize the open, high, low, and close prices of the stock for each trading day over a specific period",
-               "Plot Bollinger Bands around the closing price chart to visualize volatility and potential reversal points",
-               "Plot the RSI indicator to assess the stock's momentum and overbought/oversold conditions. RSI values above 70 indicate overbought conditions, while values below 30 indicate oversold conditions",
-               "Plot the MACD indicator to identify trend changes and potential buy/sell signals. MACD consists of a fast line (MACD line), slow line (signal line), and a histogram representing the difference between the two lines",
-               "Plot a histogram of daily returns (percentage change in closing price) to visualize the distribution of returns and assess risk",
-               "Plot a chart showing the high, low, and closing prices for each trading day over a specific period. This provides a comprehensive view of daily price fluctuations.",
-               "Overlay moving average lines (e.g.,44-day moving averages) on the closing price chart to smooth out price fluctuations and identify long-term trends."
+def generating_insights(analyzr, month, year):
+    result = {}
+    prompts = [f"Create a bar chart showing the total spending for each expense category in {month} {year}. Order the categories by the amount spent from highest to lowest",
+               f"Generate a line chart depicting my daily spending throughout {month} {year}. Include the date on the x-axis and the spending amount on the y-axis. Highlight the days with the highest and lowest spending.",
+               f"Create a pie chart illustrating the distribution of my spending across the top 3 expense categories in {month} {year}. Label each slice with the category name and the percentage of total spending it represents.",
                 ]
     
-    utils.remove_existing_files(plot)
+    remove_existing_files('plot')
     for prompt in prompts:
-        vis = analyzr.visualizations(user_input=prompt, dir_path=Path('./plot'))
+         result = analyzr.ask(
+                                prompt,
+                                outputs = ["visualisation"],
+                                plot_path = Path('./plot')
+                        )
 
-    return description, analysis
+    queries = [
+                "What is my total spending this month?",
+                "In which category do I spend the most?",
+                "How has my spending on groceries changed over the past 3 months?",
+    ]
+
+    for query in queries:
+        analysis = analyzr.ask(
+                                    user_input = query,
+                                    outputs = ["insights"]
+                            )
+        result[query] = analysis['insights']
+
+
+    return result
 
 
 def data_format():
-    pass
+    data = {
+    'Date': ['2022-01-01', '2022-01-02', '2022-01-03'],
+    'Amount': [100.00, 50.25, 75.50],
+    'Category': ['Groceries', 'Utilities', 'Dining'],
+    'Payee': ['Walmart', 'Electricity Company', 'Restaurant'],
+    'Description': ['Weekly grocery shopping', 'Electricity bill', 'Dinner with friends']
+    }
+
+    sampledf = pd.DataFrame(data)
+
+    # Display DataFrame
+    st.write(sampledf)
+
+
+def show_results(result: dict):
+    for query, insight in result.items():
+        st.subheader(query)
+        st.write(insight)
+        st.markdown("---")
 
 
 
