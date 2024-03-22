@@ -1,6 +1,6 @@
 # Welcome to the Expense Tracker by Lyzr!
 
-![Lyzr Logo](.\logo\lyzr-logo.png)
+![Lyzr Logo](./logo/lyzr-logo.png)
 
 This Expense Tracker app empowers you to take control of your finances. Seamlessly track your daily expenses, categorize them effortlessly, and gain powerful insights through DataAnalyzr's AI-powered Agent by Lyzr. Uncover spending patterns, identify areas for optimization, and make informed budgeting decisions - all within a user-friendly interface. Take charge of your financial well-being, one swipe at a time.
 
